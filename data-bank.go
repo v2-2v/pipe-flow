@@ -7,7 +7,13 @@ import (
 	"fmt"
 )
 
-var datas []string
+struct Data struct {
+	Input  string `json:"input"`
+	Value string `json:"value"`
+	Output string `json:"output"`
+}
+
+var datas []Data
 
 type Response struct {
 	Message string `json:"message"`
@@ -19,12 +25,17 @@ func pushHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	data := r.URL.Query().Get("data")
-
-	if data == "" {
-		http.Error(w, "missing data parameter", http.StatusBadRequest)
+	input := r.URL.Query().Get("input")
+	output := r.URL.Query().Get("output")
+	if data == "" || input == "" || output == "" {
+		http.Error(w, "missing data, input, or output parameter", http.StatusBadRequest)
 		return
 	}
-	datas = append(datas, data)
+	datas = append(datas, Data{
+		Input:  input,
+		Value:  data,
+		Output: output,
+	})
 	fmt.Printf("new datas: %s\n", datas)
 	res := Response{
 		Message: "push received",
@@ -37,7 +48,7 @@ func clearHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	datas = []string{}
+	datas = []Data{}
 	fmt.Printf("datas cleared\n")
 	res := Response{
 		Message: "datas cleared",
