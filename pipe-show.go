@@ -45,9 +45,18 @@ func clearHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(res)
 }
 
+func showHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	json.NewEncoder(w).Encode(datas)
+}
+
 func main() {
 	http.HandleFunc("/push", pushHandler)
 	http.HandleFunc("/clear", clearHandler)
+	http.HandleFunc("/show", showHandler)
 
 	log.Println("Server started at :8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
