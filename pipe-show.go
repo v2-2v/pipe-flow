@@ -58,6 +58,6 @@ func main() {
 	http.HandleFunc("/clear", clearHandler)
 	http.HandleFunc("/show", showHandler)
 
-	log.Println("Server started at :8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Println("Server started at :8787")
+	log.Fatal(http.ListenAndServe(":8787", nil))
 }
