@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+while true; do
+    read -e -p "pipe-flow $ " line || exit
+
+    rewritten=$(sed "s/|/| ./show |/g" <<< "$line")
+
+    bash -c "$rewritten"
+done
