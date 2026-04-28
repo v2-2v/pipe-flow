@@ -8,9 +8,8 @@ import (
 )
 
 type Data struct {
-	Input  string `json:"input"`
 	Command string `json:"command"`
-	Output string `json:"output"`
+	Data string `json:"data"`
 }
 
 var datas []Data
@@ -19,28 +18,52 @@ type Response struct {
 	Message string `json:"message"`
 }
 
-func pushHandler(w http.ResponseWriter, r *http.Request) {
+func pushcommandHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	command := r.URL.Query().Get("command")
-	input := r.URL.Query().Get("input")
-	output := r.URL.Query().Get("output")
-	if command == "" {
-		http.Error(w, "missing command, input, or output parameter", http.StatusBadRequest)
+	commands := r.URL.Query()["command"] 
+	if commands == nil {
+		http.Error(w, "Missing commands parameter", http.StatusBadRequest)
 		return
 	}
-	datas = append(datas, Data{
-		Input:  input,
-		Command: command,
-		Output: output,
-	})
+
+	for _, command := range commands {
+		datas = append(datas, Data{
+			Command: command,
+			Data: "init",
+		})
+	}
 	fmt.Printf("new datas: %s\n", datas)
 	res := Response{
 		Message: "push received",
 	}
 	json.NewEncoder(w).Encode(res)
+}
+
+func pushdataHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	data := r.URL.Query().Get("data")
+
+	for i := range datas {
+		if datas[i].Data == "init" {
+			datas[i].Data = data
+			fmt.Printf("new datas: %+v\n", datas)
+
+			res := Response{
+				Message: "push received",
+			}
+			json.NewEncoder(w).Encode(res)
+			return
+		}
+	}
+
+	http.Error(w, "No command to associate with data", http.StatusBadRequest)
+
 }
 
 func clearHandler(w http.ResponseWriter, r *http.Request) {
@@ -65,7 +88,8 @@ func showHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	http.HandleFunc("/push", pushHandler)
+	http.HandleFunc("/push-command", pushcommandHandler)
+	http.HandleFunc("/push-data", pushdataHandler)
 	http.HandleFunc("/clear", clearHandler)
 	http.HandleFunc("/show", showHandler)
 

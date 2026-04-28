@@ -8,9 +8,8 @@ import (
 )
 
 type Data struct {
-	Input  string `json:"input"`
 	Command string `json:"command"`
-	Output string `json:"output"`
+	Data string `json:"data"`
 }
 
 func main() {
@@ -37,12 +36,22 @@ func main() {
 		fmt.Println("No data received")
 		return
 	}
-	// forで回す
+
 	for i, v := range data {
-		input := v.Input
-		output := v.Output
-		if input == "" {input = "nil"}
-		if output == "" {output = "nil"}
-		fmt.Println(i+1,"  input:", input, "  command:", v.Command, "  output:", output)
+		command := v.Command
+		d := v.Data
+
+		if d == "init" {
+			d = "init (not input data yet)"
+		} else if d == "" {
+			d = "nil (empty string)"
+		}
+
+		if i == len(data)-1 { // 最後
+			fmt.Printf("[%s] --> %s", command, d)
+		} else {
+			fmt.Printf("[%s] --> %s --> ", command, d)
+		}
 	}
+	fmt.Println()
 }
