@@ -7,7 +7,7 @@ import (
 	"fmt"
 )
 
-struct Data struct {
+type Data struct {
 	Input  string `json:"input"`
 	Command string `json:"command"`
 	Output string `json:"output"`
