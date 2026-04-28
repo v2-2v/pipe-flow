@@ -7,6 +7,12 @@ import (
 	"net/http"
 )
 
+type Data struct {
+	Input  string `json:"input"`
+	Command string `json:"command"`
+	Output string `json:"output"`
+}
+
 func main() {
 	url := "http://localhost:8787/show"
 
@@ -21,8 +27,8 @@ func main() {
 		panic(err)
 	}
 
-	// 文字列配列として受け取る
-	var data []string
+	// Data構造体のスライスとして受け取る
+	var data []Data
 	err = json.Unmarshal(body, &data)
 	if err != nil {
 		panic(err)
@@ -33,6 +39,10 @@ func main() {
 	}
 	// forで回す
 	for i, v := range data {
-		fmt.Println(i, v)
+		input := v.Input
+		output := v.Output
+		if input == "" {input = "nil"}
+		if output == "" {output = "nil"}
+		fmt.Println(i+1,"  input:", input, "  command:", v.Command, "  output:", output)
 	}
 }

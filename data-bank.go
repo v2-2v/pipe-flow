@@ -27,7 +27,7 @@ func pushHandler(w http.ResponseWriter, r *http.Request) {
 	command := r.URL.Query().Get("command")
 	input := r.URL.Query().Get("input")
 	output := r.URL.Query().Get("output")
-	if command == "" || input == "" || output == "" {
+	if command == "" {
 		http.Error(w, "missing command, input, or output parameter", http.StatusBadRequest)
 		return
 	}
