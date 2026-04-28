@@ -1,1 +1,3 @@
-curl "http://localhost:8787/push?input=&command=bb&output=cc"
+curl "http://localhost:8787/push-command?command=start&command=stop&command=restart"
+
+curl "http://localhost:8787/push-data?data=1"
