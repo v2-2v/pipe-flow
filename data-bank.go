@@ -9,7 +9,7 @@ import (
 
 struct Data struct {
 	Input  string `json:"input"`
-	Value string `json:"value"`
+	Command string `json:"command"`
 	Output string `json:"output"`
 }
 
@@ -24,16 +24,16 @@ func pushHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	data := r.URL.Query().Get("data")
+	command := r.URL.Query().Get("command")
 	input := r.URL.Query().Get("input")
 	output := r.URL.Query().Get("output")
-	if data == "" || input == "" || output == "" {
-		http.Error(w, "missing data, input, or output parameter", http.StatusBadRequest)
+	if command == "" || input == "" || output == "" {
+		http.Error(w, "missing command, input, or output parameter", http.StatusBadRequest)
 		return
 	}
 	datas = append(datas, Data{
 		Input:  input,
-		Value:  data,
+		Command: command,
 		Output: output,
 	})
 	fmt.Printf("new datas: %s\n", datas)
