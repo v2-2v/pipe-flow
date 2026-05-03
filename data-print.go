@@ -15,7 +15,7 @@ type Data struct {
 func main() {
 	url := "http://localhost:8787/show"
 
-	resp, err := http.Get(url)
+	resp, err := http.Post(url, "application/json", nil)
 	if err != nil {
 		panic(err)
 	}

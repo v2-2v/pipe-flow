@@ -19,58 +19,61 @@ type Response struct {
 }
 
 func pushcommandHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
+	if r.Method != http.MethodPost {
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	commands := r.URL.Query()["command"] 
-	if commands == nil {
-		http.Error(w, "Missing commands parameter", http.StatusBadRequest)
+	var req struct {
+		Commands []string `json:"commands"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
 		return
 	}
-
-	for _, command := range commands {
+	if len(req.Commands) == 0 {
+		http.Error(w, "Missing commands", http.StatusBadRequest)
+		return
+	}
+	for _, command := range req.Commands {
 		datas = append(datas, Data{
 			Command: command,
-			Data: "init",
+			Data:     "init",
 		})
 	}
-	fmt.Printf("new datas: %s\n", datas)
-	res := Response{
+	fmt.Printf("new datas: %+v\n", datas)
+	json.NewEncoder(w).Encode(Response{
 		Message: "push received",
-	}
-	json.NewEncoder(w).Encode(res)
+	})
 }
 
 func pushdataHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
+	if r.Method != http.MethodPost {
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	data := r.URL.Query().Get("data")
-
+	var req struct {
+		Data string `json:"data"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
 	for i := range datas {
 		if datas[i].Data == "init" {
-			datas[i].Data = data
+			datas[i].Data = req.Data
+
 			fmt.Printf("new datas: %+v\n", datas)
 
-			res := Response{
+			json.NewEncoder(w).Encode(Response{
 				Message: "push received",
-			}
-			json.NewEncoder(w).Encode(res)
+			})
 			return
 		}
 	}
-
 	http.Error(w, "No command to associate with data", http.StatusBadRequest)
-
 }
 
 func clearHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
-		return
-	}
 	datas = []Data{}
 	fmt.Printf("datas cleared\n")
 	res := Response{
@@ -80,10 +83,6 @@ func clearHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func showHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
-		return
-	}
 	json.NewEncoder(w).Encode(datas)
 }
 

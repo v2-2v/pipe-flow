@@ -1,9 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"io"
 	"net/http"
-	"net/url"
 	"os"
 )
 
@@ -13,18 +13,20 @@ func main() {
 		panic(err)
 	}
 
-	input := string(data)
+	u := "http://localhost:8787/push-data"
 
-	// ★ここ重要：URLエンコード
-	u := "http://localhost:8787/push-data?data=" + url.QueryEscape(input)
-
-	resp, err := http.Get(u)
+	// ★ここでデータをPOSTに入れる
+	resp, err := http.Post(
+		u,
+		"application/json",
+		bytes.NewBuffer(data),
+	)
 	if err != nil {
 		panic(err)
 	}
 	resp.Body.Close()
 
-	// stdinの内容をそのままstdoutへ
+	// stdoutへそのまま流す
 	_, err = os.Stdout.Write(data)
 	if err != nil {
 		panic(err)

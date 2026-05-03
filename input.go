@@ -23,7 +23,7 @@ func main() {
 		commands += "&command=" + url.QueryEscape(command)
 	}
 	u := "http://localhost:8787/push-command?" + commands
-	resp, err := http.Get(u)
+	resp, err := http.Post(u, "application/json", nil)
 	if err != nil {
 		panic(err)
 	}
