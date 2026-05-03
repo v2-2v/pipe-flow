@@ -1,11 +1,12 @@
 package main
 
 import (
-	"fmt"
+	"bytes"
+	"encoding/json"
 	"net/http"
-	"net/url"
 	"os"
 	"strings"
+	"fmt"
 )
 
 func main() {
@@ -14,18 +15,35 @@ func main() {
 		return
 	}
 
-	// 2個目以降すべて取得
 	line := os.Args[1]
 	args := strings.Split(line, "|")
-	commands := ""
-	for _, command := range args {
-		// URLエンコード推奨
-		commands += "&command=" + url.QueryEscape(command)
+
+	body := struct {
+		Commands []string `json:"commands"`
+	}{
+		Commands: args,
 	}
-	u := "http://localhost:8787/push-command?" + commands
-	resp, err := http.Post(u, "application/json", nil)
+
+	b, err := json.Marshal(body)
 	if err != nil {
 		panic(err)
 	}
-	resp.Body.Close()
+
+	req, err := http.NewRequest(
+		"POST",
+		"http://localhost:8787/push-command",
+		bytes.NewBuffer(b),
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"io"
 	"net/http"
 	"os"
@@ -13,20 +14,27 @@ func main() {
 		panic(err)
 	}
 
-	u := "http://localhost:8787/push-data"
+	body := struct {
+		Data string `json:"data"`
+	}{
+		Data: string(data),
+	}
 
-	// ★ここでデータをPOSTに入れる
+	b, err := json.Marshal(body)
+	if err != nil {
+		panic(err)
+	}
+
 	resp, err := http.Post(
-		u,
+		"http://localhost:8787/push-data",
 		"application/json",
-		bytes.NewBuffer(data),
+		bytes.NewBuffer(b),
 	)
 	if err != nil {
 		panic(err)
 	}
-	resp.Body.Close()
+	defer resp.Body.Close()
 
-	// stdoutへそのまま流す
 	_, err = os.Stdout.Write(data)
 	if err != nil {
 		panic(err)
