@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 )
@@ -14,7 +13,7 @@ func main() {
 	}
 
 	data := os.Args[1]
-
+	fmt.Printf("Sending data: %s\n", data)
 	resp, err := http.Get("http://localhost:8787/push-data?data=" + data)
 	if err != nil {
 		panic(err)
