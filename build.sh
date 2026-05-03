@@ -1,5 +1,5 @@
-echo "Building command-send.go..."
-go build -o ./build/ command-send.go
+echo "Building input.go..."
+go build -o ./build/ input.go
 
 echo "Building data-bank.go..."
 go build -o ./build/ data-bank.go

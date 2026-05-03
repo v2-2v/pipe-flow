@@ -3,7 +3,9 @@
 while true; do
     read -e -p "pipe-flow $ " line || exit
 
-    rewritten=$(sed "s/|/| ./show |/g" <<< "$line")
-
+    ./build/input "$line"
+    rewritten=$(echo "$line" | sed 's/|/| .\/build\/data-send |/g')
+    ./build/data-print
+    ./build/data-clear
     bash -c "$rewritten"
 done

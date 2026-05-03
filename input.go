@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 )
 
 func main() {
@@ -14,8 +15,8 @@ func main() {
 	}
 
 	// 2個目以降すべて取得
-	args := os.Args[1:]
-	
+	line := os.Args[1]
+	args := strings.Split(line, "|")
 	commands := ""
 	for _, command := range args {
 		// URLエンコード推奨
