@@ -9,3 +9,6 @@ go build -o ./build/ data-print.go
 
 echo "Building data-send.go..."
 go build -o ./build/ data-send.go
+
+echo "Building data-clear.go..."
+go build -o ./build/ data-clear.go
