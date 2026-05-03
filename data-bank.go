@@ -54,10 +54,12 @@ func pushdataHandler(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Data string `json:"data"`
 	}
+
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
 		return
 	}
+	fmt.Printf("Received data: %s\n", req.Data)
 	for i := range datas {
 		if datas[i].Data == "init" {
 			datas[i].Data = req.Data
