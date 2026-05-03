@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 echo "Building input.go..."
 go build -o ./build/ input.go
 
