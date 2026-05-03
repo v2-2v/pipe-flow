@@ -74,6 +74,10 @@ func pushdataHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func clearHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
 	datas = []Data{}
 	fmt.Printf("datas cleared\n")
 	res := Response{
@@ -83,6 +87,10 @@ func clearHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func showHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
 	json.NewEncoder(w).Encode(datas)
 }
 

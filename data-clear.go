@@ -6,7 +6,7 @@ import (
 )
 
 func main() {
-	resp, err := http.Post("http://localhost:8787/clear", "application/json", nil)
+	resp, err := http.Get("http://localhost:8787/clear")
 	if err != nil {
 		panic(err)
 	}

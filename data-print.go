@@ -5,17 +5,18 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 )
 
 type Data struct {
 	Command string `json:"command"`
-	Data string `json:"data"`
+	Data    string `json:"data"`
 }
 
 func main() {
 	url := "http://localhost:8787/show"
-
-	resp, err := http.Post(url, "application/json", nil)
+	
+	resp, err := http.Get(url)
 	if err != nil {
 		panic(err)
 	}
@@ -26,32 +27,32 @@ func main() {
 		panic(err)
 	}
 
-	// Data構造体のスライスとして受け取る
 	var data []Data
-	err = json.Unmarshal(body, &data)
-	if err != nil {
+	if err := json.Unmarshal(body, &data); err != nil {
 		panic(err)
 	}
-	if data == nil {
+
+	if len(data) == 0 {
 		fmt.Println("No data received")
 		return
 	}
 
 	for i, v := range data {
-		command := v.Command
 		d := v.Data
 
-		if d == "init" {
+		switch d {
+		case "init":
 			d = "init (not input data yet)"
-		} else if d == "" {
+		case "":
 			d = "nil (empty string)"
 		}
 
-		if i == len(data)-1 { // 最後
-			fmt.Printf("[%s] --> %s", command, d)
+		if i == len(data)-1 {
+			fmt.Printf("[%s] --> %s", v.Command, d)
 		} else {
-			fmt.Printf("[%s] --> %s --> ", command, d)
+			fmt.Printf("[%s] --> %s --> ", v.Command, d)
 		}
 	}
+
 	fmt.Println()
 }
