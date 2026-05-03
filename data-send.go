@@ -1,22 +1,32 @@
 package main
 
 import (
-	"fmt"
+	"io"
 	"net/http"
+	"net/url"
 	"os"
 )
 
 func main() {
-	if len(os.Args) < 2 {
-		fmt.Println("argument is required")
-		return
-	}
-
-	data := os.Args[1]
-	fmt.Printf("Sending data: %s\n", data)
-	resp, err := http.Get("http://localhost:8787/push-data?data=" + data)
+	data, err := io.ReadAll(os.Stdin)
 	if err != nil {
 		panic(err)
 	}
-	defer resp.Body.Close()
+
+	input := string(data)
+
+	// ★ここ重要：URLエンコード
+	u := "http://localhost:8787/push-data?data=" + url.QueryEscape(input)
+
+	resp, err := http.Get(u)
+	if err != nil {
+		panic(err)
+	}
+	resp.Body.Close()
+
+	// stdinの内容をそのままstdoutへ
+	_, err = os.Stdout.Write(data)
+	if err != nil {
+		panic(err)
+	}
 }
