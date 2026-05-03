@@ -13,7 +13,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
 	body := struct {
 		Data string `json:"data"`
 	}{

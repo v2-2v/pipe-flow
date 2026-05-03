@@ -5,6 +5,7 @@ while true; do
 
     ./build/input "$line"
     rewritten=$(echo "$line" | sed 's/|/| .\/build\/data-send |/g')
+    echo "Rewritten command: $rewritten"
     ./build/data-print
     ./build/data-clear
     bash -c "$rewritten"
