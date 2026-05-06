@@ -18,7 +18,7 @@ type Response struct {
 	Message string `json:"message"`
 }
 
-func pushcommandHandler(w http.ResponseWriter, r *http.Request) {
+func pushcommandHandler(w http.ResponseWriter, r *http.Request) { //POST
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		return
@@ -46,7 +46,7 @@ func pushcommandHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func pushdataHandler(w http.ResponseWriter, r *http.Request) {
+func pushdataHandler(w http.ResponseWriter, r *http.Request) { //POST
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		return
@@ -75,8 +75,8 @@ func pushdataHandler(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "No command to associate with data", http.StatusBadRequest)
 }
 
-func clearHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
+func clearHandler(w http.ResponseWriter, r *http.Request) { //POST
+	if r.Method != http.MethodPost {
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		return
 	}
@@ -88,7 +88,7 @@ func clearHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(res)
 }
 
-func showHandler(w http.ResponseWriter, r *http.Request) {
+func showHandler(w http.ResponseWriter, r *http.Request) { //GET
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		return
