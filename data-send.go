@@ -6,11 +6,11 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"fmt"
 )
 
 func main() {
 	data, err := io.ReadAll(os.Stdin)
+	data = bytes.TrimRight(data, "\r\n")
 	if err != nil {
 		panic(err)
 	}
