@@ -22,6 +22,7 @@ echo "server started with PID $SERVER_PID"
 while true; do
     read -e -p "pipe-flow $ " line || exit
     echo -e "\n"
+    line="$(printf '%s\n' "$line" | sed 's/\(^\|[[:space:]]\)#\([[:space:]]\|$\)/ \\\# /g')"
     ./build/input "$line"
     rewritten="$(echo "$line" | sed 's/|/| .\/build\/data-send |/g') | ./build/data-send"
     #echo "Rewritten command printtttttttttttttt: $rewritten"
