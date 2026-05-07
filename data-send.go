@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+
 )
 
 func main() {
@@ -30,6 +31,7 @@ func main() {
 		"application/json",
 		bytes.NewBuffer(b),
 	)
+
 	if err != nil {
 		panic(err)
 	}

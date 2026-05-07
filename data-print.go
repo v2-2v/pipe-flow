@@ -26,7 +26,6 @@ func main() {
 		panic(err)
 	}
 
-	// 👇まず配列として試す
 	var list []Data
 	if err := json.Unmarshal(body, &list); err == nil {
 
@@ -34,7 +33,6 @@ func main() {
 		return
 	}
 
-	// 👇単体オブジェクトとして試す
 	var single Data
 	if err := json.Unmarshal(body, &single); err == nil {
 
