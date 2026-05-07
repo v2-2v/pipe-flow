@@ -1,5 +1,21 @@
 #!/usr/bin/env bash
 
+cleanup() {
+    echo -e "shutting down server..."
+    kill "$SERVER_PID" 2>/dev/null || true
+    exit 0
+}
+
+
+trap cleanup SIGINT #ctrl+c
+trap cleanup SIGTERM #kill process
+trap cleanup EXIT #end shell
+
+echo "starting server..."
+./build/data-bank > /dev/null 2>&1 &
+SERVER_PID=$!
+echo "server started with PID $SERVER_PID"
+
 while true; do
     read -e -p "pipe-flow $ " line || exit
     echo -e "\n"
