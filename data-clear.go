@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	//"fmt"
 	"net/http"
 )
 
@@ -11,5 +11,5 @@ func main() {
 		panic(err)
 	}
 	defer resp.Body.Close()
-	fmt.Println("Data cleared successfully")
+	//fmt.Println("Data cleared successfully")
 }

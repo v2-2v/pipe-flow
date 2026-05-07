@@ -64,9 +64,9 @@ func printList(data []Data) {
 		}
 
 		if i == len(data)-1 {
-			fmt.Printf("[%s]\n\t↓\n%s", c, d)
+			fmt.Printf("[%s]\n↓\n%s", c, d)
 		} else {
-			fmt.Printf("[%s]\n\t↓\n%s\n\t↓\n", c, d)
+			fmt.Printf("[%s]\n↓\n%s\n↓\n", c, d)
 		}
 	}
 

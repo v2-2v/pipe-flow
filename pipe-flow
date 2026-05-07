@@ -2,11 +2,12 @@
 
 while true; do
     read -e -p "pipe-flow $ " line || exit
-
+    echo -e "\n"
     ./build/input "$line"
     rewritten="$(echo "$line" | sed 's/|/| .\/build\/data-send |/g') | ./build/data-send"
     #echo "Rewritten command printtttttttttttttt: $rewritten"
-    bash -c "$rewritten"
+    bash -c "$rewritten" > /dev/null
     ./build/data-print
     ./build/data-clear
+    echo -e "\n"
 done
