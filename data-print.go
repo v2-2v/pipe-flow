@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 )
 
 type Data struct {
@@ -52,7 +53,9 @@ func printList(data []Data) {
 
 	for i, v := range data {
 		d := v.Data
-
+		c := v.Command
+		c = strings.TrimLeft(c, " ")
+		c = strings.TrimRight(c, " ")
 		switch d {
 		case "init":
 			d = "init (not input data yet)"
@@ -61,9 +64,9 @@ func printList(data []Data) {
 		}
 
 		if i == len(data)-1 {
-			fmt.Printf("[%s] --> %s", v.Command, d)
+			fmt.Printf("[%s]\n\t↓\n%s", c, d)
 		} else {
-			fmt.Printf("[%s] --> %s --> ", v.Command, d)
+			fmt.Printf("[%s]\n\t↓\n%s\n\t↓\n", c, d)
 		}
 	}
 
