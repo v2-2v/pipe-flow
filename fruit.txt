@@ -1,6 +1,6 @@
-apple
-orange
-lemon
-apple
-orange
-lemon
+apple +1
+orange +3
+lemon +5
+apple -3
+orange -1
+lemon 0
