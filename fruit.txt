@@ -1,0 +1,6 @@
+apple
+orange
+lemon
+apple
+orange
+lemon
