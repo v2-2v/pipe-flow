@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 )
 
 type Data struct {
@@ -111,17 +112,25 @@ func inferWithLMStudio(command string) {
 		req.Header.Set("Authorization", "Bearer "+apiKey)
 	}
 
+	// ローディング画面開始
+	fmt.Print("\n推論中")
+	done := make(chan struct{})
+	go showLoadingSpinner(done)
+
 	client := &http.Client{}
 	resp, err := client.Do(req)
+	close(done)
+	fmt.Print("\r          \r") // ローディング表示をクリア
+
 	if err != nil {
-		fmt.Printf("\nLLM request failed: %v\n", err)
+		fmt.Printf("LLM request failed: %v\n", err)
 		return
 	}
 	defer resp.Body.Close()
 
 	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Printf("\nFailed to read LLM response: %v\n", err)
+		fmt.Printf("Failed to read LLM response: %v\n", err)
 		return
 	}
 
@@ -133,17 +142,17 @@ func inferWithLMStudio(command string) {
 		} `json:"choices"`
 	}
 	if err := json.Unmarshal(responseBody, &result); err != nil {
-		fmt.Printf("\nFailed to parse LLM response: %v\n", err)
+		fmt.Printf("Failed to parse LLM response: %v\n", err)
 		fmt.Printf("Response: %s\n", string(responseBody))
 		return
 	}
 
 	if len(result.Choices) == 0 || strings.TrimSpace(result.Choices[0].Message.Content) == "" {
-		fmt.Println("\nLLM response was empty")
+		fmt.Println("LLM response was empty")
 		return
 	}
 
-	fmt.Printf("\n説明：%s\n", strings.TrimSpace(result.Choices[0].Message.Content))
+	fmt.Printf("説明：%s\n", strings.TrimSpace(result.Choices[0].Message.Content))
 }
 
 func printList(data []Data) {
@@ -185,4 +194,21 @@ func printList(data []Data) {
 	}
 	fmt.Printf("\n\nInput command: %s\n", command)
 	inferWithLMStudio(command)
+}
+
+func showLoadingSpinner(done <-chan struct{}) {
+	spinner := []string{"|", "/", "-", "\\"}
+	i := 0
+	ticker := time.NewTicker(100 * time.Millisecond)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-done:
+			return
+		case <-ticker.C:
+			fmt.Printf("\r推論中 %s", spinner[i%len(spinner)])
+			i++
+		}
+	}
 }
