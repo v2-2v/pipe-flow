@@ -1,10 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 )
 
@@ -45,6 +47,105 @@ func main() {
 	fmt.Println(string(body))
 }
 
+func loadEnv(path string) map[string]string {
+	env := map[string]string{}
+	content, err := os.ReadFile(path)
+	if err != nil {
+		return env
+	}
+
+	for _, line := range strings.Split(string(content), "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+
+		parts := strings.SplitN(line, "=", 2)
+		if len(parts) != 2 {
+			continue
+		}
+
+		key := strings.TrimSpace(parts[0])
+		value := strings.Trim(strings.TrimSpace(parts[1]), "\"'")
+		env[key] = value
+	}
+
+	return env
+}
+
+func inferWithLMStudio(command string) {
+	env := loadEnv(".env")
+	endpoint := env["LMSTUDIO_URL"]
+	model := env["LMSTUDIO_MODEL"]
+	apiKey := env["API_KEY"]
+
+	if endpoint == "" || model == "" {
+		fmt.Println("\nSkipped LM Studio inference: missing .env settings")
+		return
+	}
+
+	prompt := fmt.Sprintf("Please explain the following shell command in Japanese in one short sentence:\n%s", command)
+	payload := map[string]any{
+		"model": model,
+		"messages": []map[string]string{{
+			"role":    "user",
+			"content": prompt,
+		}},
+		"temperature": 0.2,
+	}
+
+	body, err := json.Marshal(payload)
+	if err != nil {
+		fmt.Printf("\nFailed to build LM Studio request: %v\n", err)
+		return
+	}
+
+	req, err := http.NewRequest(http.MethodPost, endpoint, bytes.NewBuffer(body))
+	if err != nil {
+		fmt.Printf("\nFailed to create LM Studio request: %v\n", err)
+		return
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	if apiKey != "" {
+		req.Header.Set("Authorization", "Bearer "+apiKey)
+	}
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Printf("\nLM Studio request failed: %v\n", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	responseBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Printf("\nFailed to read LM Studio response: %v\n", err)
+		return
+	}
+
+	var result struct {
+		Choices []struct {
+			Message struct {
+				Content string `json:"content"`
+			} `json:"message"`
+		} `json:"choices"`
+	}
+	if err := json.Unmarshal(responseBody, &result); err != nil {
+		fmt.Printf("\nFailed to parse LM Studio response: %v\n", err)
+		fmt.Printf("Response: %s\n", string(responseBody))
+		return
+	}
+
+	if len(result.Choices) == 0 || strings.TrimSpace(result.Choices[0].Message.Content) == "" {
+		fmt.Println("\nLM Studio response was empty")
+		return
+	}
+
+	fmt.Printf("\nLM Studio response: %s\n", strings.TrimSpace(result.Choices[0].Message.Content))
+}
+
 func printList(data []Data) {
 	if len(data) == 0 {
 		fmt.Println("No data received")
@@ -83,6 +184,5 @@ func printList(data []Data) {
 		command = string(r[:len(r)-3])
 	}
 	fmt.Printf("\nFinal command: %s", command)
-	// ここでLLMにcommandを送信
-
+	inferWithLMStudio(command)
 }
