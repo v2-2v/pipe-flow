@@ -83,5 +83,6 @@ func printList(data []Data) {
 		command = string(r[:len(r)-3])
 	}
 	fmt.Printf("\nFinal command: %s", command)
+	// ここでLLMにcommandを送信
 
 }
