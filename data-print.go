@@ -80,7 +80,7 @@ func inferWithLMStudio(command string) {
 	apiKey := env["API_KEY"]
 
 	if endpoint == "" || model == "" {
-		fmt.Println("\nSkipped LM Studio inference: missing .env settings")
+		fmt.Println("\nSkipped LLM inference: missing .env settings")
 		return
 	}
 
@@ -96,13 +96,13 @@ func inferWithLMStudio(command string) {
 
 	body, err := json.Marshal(payload)
 	if err != nil {
-		fmt.Printf("\nFailed to build LM Studio request: %v\n", err)
+		fmt.Printf("\nFailed to build LLM request: %v\n", err)
 		return
 	}
 
 	req, err := http.NewRequest(http.MethodPost, endpoint, bytes.NewBuffer(body))
 	if err != nil {
-		fmt.Printf("\nFailed to create LM Studio request: %v\n", err)
+		fmt.Printf("\nFailed to create LLM request: %v\n", err)
 		return
 	}
 
@@ -114,14 +114,14 @@ func inferWithLMStudio(command string) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Printf("\nLM Studio request failed: %v\n", err)
+		fmt.Printf("\nLLM request failed: %v\n", err)
 		return
 	}
 	defer resp.Body.Close()
 
 	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Printf("\nFailed to read LM Studio response: %v\n", err)
+		fmt.Printf("\nFailed to read LLM response: %v\n", err)
 		return
 	}
 
@@ -133,17 +133,17 @@ func inferWithLMStudio(command string) {
 		} `json:"choices"`
 	}
 	if err := json.Unmarshal(responseBody, &result); err != nil {
-		fmt.Printf("\nFailed to parse LM Studio response: %v\n", err)
+		fmt.Printf("\nFailed to parse LLM response: %v\n", err)
 		fmt.Printf("Response: %s\n", string(responseBody))
 		return
 	}
 
 	if len(result.Choices) == 0 || strings.TrimSpace(result.Choices[0].Message.Content) == "" {
-		fmt.Println("\nLM Studio response was empty")
+		fmt.Println("\nLLM response was empty")
 		return
 	}
 
-	fmt.Printf("\nLM Studio response: %s\n", strings.TrimSpace(result.Choices[0].Message.Content))
+	fmt.Printf("\n説明：%s\n", strings.TrimSpace(result.Choices[0].Message.Content))
 }
 
 func printList(data []Data) {
@@ -183,6 +183,6 @@ func printList(data []Data) {
 	if len(r) >= 3 {
 		command = string(r[:len(r)-3])
 	}
-	fmt.Printf("\nFinal command: %s", command)
+	fmt.Printf("\n\nInput command: %s\n", command)
 	inferWithLMStudio(command)
 }
