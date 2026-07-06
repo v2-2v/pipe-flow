@@ -69,6 +69,20 @@ func printList(data []Data) {
 			fmt.Printf("[%s]\n↓\n%s\n↓\n", c, d)
 		}
 	}
+	command := ""
 
-	fmt.Println()
+	for _, v := range data {
+		c := v.Command
+		c = strings.TrimLeft(c, " ")
+		c = strings.TrimRight(c, " ")
+		c += " | "
+		//fmt.Printf("[%s]", c)
+		command += c
+	}
+	r := []rune(command)
+	if len(r) >= 3 {
+		command = string(r[:len(r)-3])
+	}
+	fmt.Printf("\nFinal command: %s", command)
+
 }
