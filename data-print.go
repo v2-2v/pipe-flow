@@ -76,7 +76,6 @@ func printList(data []Data) {
 		c = strings.TrimLeft(c, " ")
 		c = strings.TrimRight(c, " ")
 		c += " | "
-		//fmt.Printf("[%s]", c)
 		command += c
 	}
 	r := []rune(command)
