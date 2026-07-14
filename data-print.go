@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -32,6 +33,8 @@ type Model struct {
 	globalInference      string
 	globalLoading        bool
 	spinnerIndex         int
+	inferenceCtx         context.Context
+	cancelInference      context.CancelFunc
 }
 
 type inferenceCompleteMsg struct {
@@ -41,6 +44,12 @@ type inferenceCompleteMsg struct {
 
 type inferenceErrorMsg struct {
 	err      error
+	isGlobal bool
+}
+
+type startInferenceMsg struct {
+	ctx      context.Context
+	cancel   context.CancelFunc
 	isGlobal bool
 }
 
@@ -123,6 +132,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		case "up":
 			if m.selectedIdx > 0 {
+				if m.cancelInference != nil {
+					m.cancelInference()
+				}
 				m.selectedIdx--
 				m.inference = ""
 				m.showInference = false
@@ -130,6 +142,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case "down":
 			if m.selectedIdx < len(m.dataList)-1 {
+				if m.cancelInference != nil {
+					m.cancelInference()
+				}
 				m.selectedIdx++
 				m.inference = ""
 				m.showInference = false
