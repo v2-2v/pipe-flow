@@ -351,7 +351,6 @@ func (m Model) renderInference() string {
 
 func (m Model) buildGlobalInferenceCmd() tea.Cmd {
 	return func() tea.Msg {
-		// パイプライン全体のコマンド構築
 		command := ""
 		for _, v := range m.dataList {
 			c := strings.TrimSpace(v.Command)
@@ -362,8 +361,20 @@ func (m Model) buildGlobalInferenceCmd() tea.Cmd {
 			command = string(r[:len(r)-3])
 		}
 
-		// LLM推論実行
-		inference, err := m.runInference(command)
+		var dataParts []string
+		for i, v := range m.dataList {
+			data := strings.TrimSpace(v.Data)
+			if data == "" || data == "init" {
+				continue
+			}
+			dataParts = append(dataParts, fmt.Sprintf("Step %d command: %s\nData: %s", i+1, strings.TrimSpace(v.Command), data))
+		}
+		dataText := strings.Join(dataParts, "\n\n")
+		if dataText == "" {
+			dataText = "none"
+		}
+
+		inference, err := m.runInference(command, dataText)
 		if err != nil {
 			return inferenceErrorMsg{err, true}
 		}
@@ -374,15 +385,14 @@ func (m Model) buildGlobalInferenceCmd() tea.Cmd {
 
 func (m Model) buildInferenceCmd() tea.Cmd {
 	return func() tea.Msg {
-		// 選択されたコマンドのみを推論対象にする
 		if m.selectedIdx < 0 || m.selectedIdx >= len(m.dataList) {
 			return inferenceErrorMsg{fmt.Errorf("no command selected"), false}
 		}
 
 		command := strings.TrimSpace(m.dataList[m.selectedIdx].Command)
+		data := strings.TrimSpace(m.dataList[m.selectedIdx].Data)
 
-		// LLM推論実行
-		inference, err := m.runInference(command)
+		inference, err := m.runInference(command, data)
 		if err != nil {
 			return inferenceErrorMsg{err, false}
 		}
@@ -391,7 +401,21 @@ func (m Model) buildInferenceCmd() tea.Cmd {
 	}
 }
 
-func (m Model) runInference(command string) (string, error) {
+func buildInferencePrompt(command string, data string) string {
+	command = strings.TrimSpace(command)
+	data = strings.TrimSpace(data)
+	if data == "" {
+		data = "none"
+	}
+
+	return fmt.Sprintf(
+		"Please explain the following shell command in Japanese in one short sentence while considering the input/output data.\n\nCommand:\n%s\n\nInput/output data:\n%s",
+		command,
+		data,
+	)
+}
+
+func (m Model) runInference(command string, data string) (string, error) {
 	env := loadEnv(".env")
 	endpoint := env["LMSTUDIO_URL"]
 	model := env["LMSTUDIO_MODEL"]
@@ -401,7 +425,7 @@ func (m Model) runInference(command string) (string, error) {
 		return "LLM設定がありません(.env参照)", nil
 	}
 
-	prompt := fmt.Sprintf("Please explain the following shell command in Japanese in one short sentence:\n%s", command)
+	prompt := buildInferencePrompt(command, data)
 	payload := map[string]any{
 		"model": model,
 		"messages": []map[string]string{{
