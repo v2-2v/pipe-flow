@@ -8,10 +8,9 @@ cleanup() {
     exit 0
 }
 
-
-trap cleanup SIGINT #ctrl+c
-trap cleanup SIGTERM #kill process
-trap cleanup EXIT #end shell
+trap cleanup SIGINT
+trap cleanup SIGTERM
+trap cleanup EXIT
 
 echo "starting server..."
 ./build/data-bank > /dev/null 2>&1 &
@@ -26,8 +25,17 @@ while true; do
     echo -e "\n"
     line="$(printf '%s\n' "$line" | sed 's/\(^\|[[:space:]]\)#\([[:space:]]\|$\)/ \\\# /g')"
     ./build/input "$line"
-    rewritten="$(echo "$line" | sed 's/|/| .\/build\/data-send |/g') | ./build/data-send"
-    #echo "Rewritten command printtttttttttttttt: $rewritten"
+
+    IFS='|' read -r -a parts <<< "$line"
+    rewritten=""
+    for i in "${!parts[@]}"; do
+        step="${parts[$i]}"
+        step="$(printf '%s' "$step" | sed 's/^ *//;s/ *$//')"
+        if [ -n "$rewritten" ]; then
+            rewritten+=" | "
+        fi
+        rewritten+="$step | ./build/data-send $i"
+    done
     bash -c "$rewritten" > /dev/null
     ./build/data-print
     ./build/data-clear
