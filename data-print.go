@@ -63,6 +63,27 @@ func (t tickMsg) String() string {
 	return "tick"
 }
 
+func normalizeData(raw string) string {
+	raw = strings.Trim(raw, "\r\n")
+	lines := strings.Split(raw, "\n")
+	for i, line := range lines {
+		lines[i] = strings.TrimRight(line, " \t\r")
+	}
+	return strings.TrimRight(strings.Join(lines, "\n"), "\r\n")
+}
+
+func indentBlock(text string) string {
+	text = normalizeData(text)
+	if text == "" {
+		return ""
+	}
+	lines := strings.Split(text, "\n")
+	for i, line := range lines {
+		lines[i] = "  " + line
+	}
+	return strings.Join(lines, "\n")
+}
+
 func main() {
 	m := Model{
 		selectedIdx:   0,
@@ -252,11 +273,13 @@ func (m Model) renderTable() string {
 
 	for i, item := range m.dataList {
 		cmd := strings.TrimSpace(item.Command)
-		data := item.Data
+		data := normalizeData(item.Data)
 		if data == "init" {
 			data = "init (not input data yet)"
 		} else if data == "" {
 			data = "nil (empty string)"
+		} else {
+			data = indentBlock(data)
 		}
 
 		style := normalStyle
@@ -273,7 +296,7 @@ func (m Model) renderTable() string {
 		sb.WriteString("\n")
 		sb.WriteString(style.Render(fmt.Sprintf("  ↓")))
 		sb.WriteString("\n")
-		sb.WriteString(style.Render(fmt.Sprintf("  %s", data)))
+		sb.WriteString(style.Render(data))
 		sb.WriteString("\n")
 
 		if i < len(m.dataList)-1 {
@@ -409,7 +432,7 @@ func buildInferencePrompt(command string, data string) string {
 	}
 
 	return fmt.Sprintf(
-		"Please explain the following shell command in Japanese in one short sentence while considering the input/output data.\n\nCommand:\n%s\n\nInput/output data:\n%s",
+		"Explain the shell command in Japanese in one short sentence while considering the input/output data.\n\nCritical rules:\n- Keep every literal string from the command and data exactly as it appears. Do not translate, localize, paraphrase, or change casing of any file name, command, flag, word, or value.\n- Never replace 'orange' with 'オレンジ', 'apple' with 'りんご', or any other translated form. Keep values like 'orange +3' and 'orange -1' exactly unchanged.\n- Only the surrounding explanation may be in Japanese; the actual command/data text must remain verbatim.\n\nCommand:\n%s\n\nInput/output data:\n%s",
 		command,
 		data,
 	)

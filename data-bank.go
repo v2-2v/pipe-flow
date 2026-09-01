@@ -5,7 +5,17 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 )
+
+func normalizeData(raw string) string {
+	raw = strings.Trim(raw, "\r\n")
+	lines := strings.Split(raw, "\n")
+	for i, line := range lines {
+		lines[i] = strings.TrimRight(line, " \t\r")
+	}
+	return strings.TrimRight(strings.Join(lines, "\n"), "\r\n")
+}
 
 type Data struct {
 	Command string `json:"command"`
@@ -83,6 +93,7 @@ func pushdataHandler(w http.ResponseWriter, r *http.Request) { //POST
 		return
 	}
 
+	req.Data = normalizeData(req.Data)
 	fmt.Printf("Received data: %s (index=%d)\n", req.Data, req.Index)
 	datas = storeDataByIndex(datas, req.Index, req.Data)
 	fmt.Printf("new datas: %+v\n", datas)
