@@ -397,7 +397,7 @@ func (m Model) buildGlobalInferenceCmd() tea.Cmd {
 			dataText = "none"
 		}
 
-		inference, err := m.runInference(command, dataText)
+		inference, err := m.runInferenceWithPrompt(command, dataText, buildGlobalInferencePrompt)
 		if err != nil {
 			return inferenceErrorMsg{err, true}
 		}
@@ -432,13 +432,31 @@ func buildInferencePrompt(command string, data string) string {
 	}
 
 	return fmt.Sprintf(
-		"Explain the shell command in Japanese in one short sentence while considering the input/output data.\n\nCritical rules:\n- Keep every literal string from the command and data exactly as it appears. Do not translate, localize, paraphrase, or change casing of any file name, command, flag, word, or value.\n- Never replace 'orange' with 'オレンジ', 'apple' with 'りんご', or any other translated form. Keep values like 'orange +3' and 'orange -1' exactly unchanged.\n- Only the surrounding explanation may be in Japanese; the actual command/data text must remain verbatim.\n\nCommand:\n%s\n\nInput/output data:\n%s",
+		"Explain this shell command in Japanese as a concise learning guide. Use the following sections:\n1. 何をするコマンドか\n2. 構文\n3. 引数・オプションの説明\n4. 使い方（実行例）\n5. 入出力データの読み方\n\nOutput must be plain text only. Do not use Markdown or any Markdown-like formatting: no headings with #, no bullet markers such as -, *, or +, no numbered-list formatting, no backticks, no code blocks, no bold or italic markers, and no tables. Write section names as ordinary plain text lines. Keep the explanation clear and concise. Include only sections that are relevant to this command, and do not invent options or behavior. Show command examples as plain text lines without backticks or other decoration.\n\nCritical rules:\n- Keep every literal string from the command and data exactly as it appears. Do not translate, localize, paraphrase, or change casing of any file name, command, flag, word, or value.\n- Never replace 'orange' with 'オレンジ', 'apple' with 'りんご', or any other translated form. Keep values like 'orange +3' and 'orange -1' exactly unchanged.\n- Only the surrounding explanation may be in Japanese; the actual command/data text must remain verbatim.\n\nCommand:\n%s\n\nInput/output data:\n%s",
+		command,
+		data,
+	)
+}
+
+func buildGlobalInferencePrompt(command string, data string) string {
+	command = strings.TrimSpace(command)
+	data = strings.TrimSpace(data)
+	if data == "" {
+		data = "none"
+	}
+
+	return fmt.Sprintf(
+		"Please explain the following shell command in Japanese in one short sentence while considering the input/output data.\n\nImportant: keep the original file contents, command arguments, and data values exactly as they are. Do not translate or paraphrase the actual text in the data. Only explain what the command does in Japanese.\n\nCommand:\n%s\n\nInput/output data:\n%s",
 		command,
 		data,
 	)
 }
 
 func (m Model) runInference(command string, data string) (string, error) {
+	return m.runInferenceWithPrompt(command, data, buildInferencePrompt)
+}
+
+func (m Model) runInferenceWithPrompt(command string, data string, promptBuilder func(string, string) string) (string, error) {
 	env := loadEnv(".env")
 	endpoint := env["LMSTUDIO_URL"]
 	model := env["LMSTUDIO_MODEL"]
@@ -448,7 +466,7 @@ func (m Model) runInference(command string, data string) (string, error) {
 		return "LLM設定がありません(.env参照)", nil
 	}
 
-	prompt := buildInferencePrompt(command, data)
+	prompt := promptBuilder(command, data)
 	payload := map[string]any{
 		"model": model,
 		"messages": []map[string]string{{
