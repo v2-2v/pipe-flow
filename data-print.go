@@ -23,6 +23,7 @@ type Data struct {
 type Model struct {
 	dataList             []Data
 	selectedIdx          int
+	showFullOutput       bool
 	inference            string
 	inferenceSelectedIdx int
 	loading              bool
@@ -157,6 +158,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.cancelInference()
 				}
 				m.selectedIdx--
+				m.showFullOutput = false
 				m.inference = ""
 				m.showInference = false
 				m.loading = false
@@ -167,9 +169,17 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.cancelInference()
 				}
 				m.selectedIdx++
+				m.showFullOutput = false
 				m.inference = ""
 				m.showInference = false
 				m.loading = false
+			}
+		case "m":
+			if m.selectedIdx >= 0 && m.selectedIdx < len(m.dataList) {
+				data := normalizeData(m.dataList[m.selectedIdx].Data)
+				if len(strings.Split(data, "\n")) > 5 {
+					m.showFullOutput = !m.showFullOutput
+				}
 			}
 		case "l":
 			if !m.loading && len(m.dataList) > 0 {
@@ -247,9 +257,15 @@ func (m Model) View() string {
 	// フッター
 	footerStyle := lipgloss.NewStyle().
 		Foreground(lipgloss.Color("8"))
-	sb.WriteString(footerStyle.Render(
-		"↑/↓: Select | l: Explain | q: Quit",
-	))
+	footer := "↑/↓: Select | l: Explain | q: Quit"
+	if m.hasLongSelectedOutput() {
+		if m.showFullOutput {
+			footer = "↑/↓: Select | m: Compact output | l: Explain | q: Quit"
+		} else {
+			footer = "↑/↓: Select | m: Full output | l: Explain | q: Quit"
+		}
+	}
+	sb.WriteString(footerStyle.Render(footer))
 
 	if m.err != "" {
 		errStyle := lipgloss.NewStyle().
@@ -259,6 +275,21 @@ func (m Model) View() string {
 	}
 
 	return sb.String()
+}
+
+func (m Model) terminalWidth() int {
+	if m.width > 0 {
+		return m.width
+	}
+	return 80
+}
+
+func (m Model) boxContentWidth() int {
+	width := m.terminalWidth() - 4
+	if width < 1 {
+		return 1
+	}
+	return width
 }
 
 func (m Model) renderTable() string {
@@ -274,29 +305,31 @@ func (m Model) renderTable() string {
 	for i, item := range m.dataList {
 		cmd := strings.TrimSpace(item.Command)
 		data := normalizeData(item.Data)
-		if data == "init" {
+		switch data {
+		case "init":
 			data = "init (not input data yet)"
-		} else if data == "" {
+		case "":
 			data = "nil (empty string)"
-		} else {
-			data = indentBlock(data)
+		default:
+			if i != m.selectedIdx || !m.showFullOutput {
+				data = previewLines(data, 5)
+			}
 		}
 
 		style := normalStyle
 		if i == m.selectedIdx {
 			style = selectedStyle
 		}
-
 		prefix := " "
 		if i == m.selectedIdx {
 			prefix = ">"
 		}
 
-		sb.WriteString(style.Render(fmt.Sprintf("%s [%s]", prefix, cmd)))
+		sb.WriteString(style.Width(m.terminalWidth()).Render(fmt.Sprintf("%s [%d] %s", prefix, i+1, cmd)))
 		sb.WriteString("\n")
-		sb.WriteString(style.Render(fmt.Sprintf("  ↓")))
+		sb.WriteString(normalStyle.Render("  ↓"))
 		sb.WriteString("\n")
-		sb.WriteString(style.Render(data))
+		sb.WriteString(normalStyle.Width(m.terminalWidth()).Render(indentBlock(data)))
 		sb.WriteString("\n")
 
 		if i < len(m.dataList)-1 {
@@ -308,17 +341,30 @@ func (m Model) renderTable() string {
 	return sb.String()
 }
 
-func (m Model) renderGlobalInference() string {
-	width := m.width - 4
-	if width < 40 {
-		width = 40
+func (m Model) hasLongSelectedOutput() bool {
+	if m.selectedIdx < 0 || m.selectedIdx >= len(m.dataList) {
+		return false
+	}
+	return len(strings.Split(normalizeData(m.dataList[m.selectedIdx].Data), "\n")) > 5
+}
+
+func previewLines(text string, maxLines int) string {
+	lines := strings.Split(normalizeData(text), "\n")
+	if len(lines) <= maxLines {
+		return strings.Join(lines, "\n")
 	}
 
+	preview := append([]string(nil), lines[:maxLines]...)
+	preview = append(preview, fmt.Sprintf("... (%d more lines; press m)", len(lines)-maxLines))
+	return strings.Join(preview, "\n")
+}
+
+func (m Model) renderGlobalInference() string {
 	boxStyle := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(lipgloss.Color("2")).
 		Padding(1).
-		Width(width)
+		Width(m.boxContentWidth())
 
 	if m.globalLoading {
 		spinner := []string{"|", "/", "-", "\\"}
@@ -327,17 +373,7 @@ func (m Model) renderGlobalInference() string {
 	}
 
 	if m.globalInference != "" {
-		// パイプラインコマンド構築
-		command := ""
-		for _, v := range m.dataList {
-			c := strings.TrimSpace(v.Command)
-			command += c + " | "
-		}
-		r := []rune(command)
-		if len(r) >= 3 {
-			command = string(r[:len(r)-3])
-		}
-
+		command := pipelineCommand(m.dataList)
 		content := fmt.Sprintf("Global Command Explanation\n\n%s\n\n%s", command, m.globalInference)
 		return boxStyle.Render(content)
 	}
@@ -346,16 +382,11 @@ func (m Model) renderGlobalInference() string {
 }
 
 func (m Model) renderInference() string {
-	width := m.width - 4
-	if width < 40 {
-		width = 40
-	}
-
 	boxStyle := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(lipgloss.Color("4")).
 		Padding(1).
-		Width(width)
+		Width(m.boxContentWidth())
 
 	if m.loading {
 		spinner := []string{"|", "/", "-", "\\"}
@@ -374,15 +405,7 @@ func (m Model) renderInference() string {
 
 func (m Model) buildGlobalInferenceCmd() tea.Cmd {
 	return func() tea.Msg {
-		command := ""
-		for _, v := range m.dataList {
-			c := strings.TrimSpace(v.Command)
-			command += c + " | "
-		}
-		r := []rune(command)
-		if len(r) >= 3 {
-			command = string(r[:len(r)-3])
-		}
+		command := pipelineCommand(m.dataList)
 
 		var dataParts []string
 		for i, v := range m.dataList {
@@ -404,6 +427,14 @@ func (m Model) buildGlobalInferenceCmd() tea.Cmd {
 
 		return inferenceCompleteMsg{inference, true}
 	}
+}
+
+func pipelineCommand(dataList []Data) string {
+	commands := make([]string, 0, len(dataList))
+	for _, item := range dataList {
+		commands = append(commands, strings.TrimSpace(item.Command))
+	}
+	return strings.Join(commands, " | ")
 }
 
 func (m Model) buildInferenceCmd() tea.Cmd {
